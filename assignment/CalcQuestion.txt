@@ -1,0 +1,11 @@
+I need help with my java homework. Due to missing two days because of flu. I am completely lost on how to do this homework.
+For this assignment we will need to use the Rational number GUI with regular expression code and the Rational.Java code that I have linked below. Cannot change anything on the GUI code except the incomplete doCalculation method. Cannot change anything on the Rational.java except the decalred variable num and den to make them visible in another code.
+
+In GUI, the user is expected to enter the fraction as one big string with the “/” character separating the numerator and denominator if needed. Examples of rational numbers include 5/6, -23/12, 2, -55, or mixed number 5 4/7 with white space separating whole number from fractions.
+You MUST use Regular Expressions to parse the numerator and denominator to create a Rational number from a string.
+Create a new class that inherits from Rational and add the string constructor that accepts a single string. The constructor will then use regular expression coding to create the number. Then add code to the GUI to output the result of the specified operation.
+
+Link to github gist for the required codes:
+https://gist.github.com/Alexmalding/67303f411a3da2994f244c22a8396c01 (GUI)
+
+https://gist.github.com/Alexmalding/0ff16bcee6109c8b6725d022e3c68d8b (RATIONAL)
