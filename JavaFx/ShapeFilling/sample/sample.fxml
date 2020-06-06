@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<AnchorPane xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+      <Button fx:id="button2" text = "Circle Button" layoutX = "200" layoutY="600"/>
+      <Button fx:id="button1" text = "Square Button" layoutX = "350" layoutY="600"/>
+      <Button fx:id="button3" text = "Start Animation" layoutX = "500" layoutY="600"/>
+      <Button fx:id="button4" text = "Stop Animation" layoutX = "650" layoutY="600"/>
+
+    <Pane fx:id="pane3"></Pane>
+
+   <Pane fx:id="pane1" layoutX = "200" layoutY="100">
+
+       <VBox fx:id="vBox1" layoutX="0" layoutY="300">
+
+       </VBox>
+       <HBox fx:id="hBox1" layoutX = "0" layoutY = "400" >
+       </HBox>
+   </Pane>
+   <Pane fx:id="pane2" layoutX = "600" layoutY="100">
+
+       <VBox fx:id="vBox2" layoutX="0" layoutY="300">
+
+       </VBox>
+       <HBox fx:id="hBox2" layoutX = "0" layoutY = "400" >
+
+       </HBox>
+   </Pane>
+
+</AnchorPane>
