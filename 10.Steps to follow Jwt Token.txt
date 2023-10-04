@@ -1,0 +1,302 @@
+JWT Dependency
+
+
+
+<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.11.5</version>
+</dependency>
+
+
+
+<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-impl</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+
+
+<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+
+
+Steps 
+
+1. Create JWTAuthenticationEntryPoint that implements AuthenticationEntryPoint
+
+@Component
+public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint{
+
+	@Override
+	public void commence(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException authException) throws IOException, ServletException {
+	
+		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		PrintWriter writer=response.getWriter();
+		
+		writer.println("Access Denied "+ authException.getMessage());
+	
+	}
+
+}
+
+2. Create Jwt help class that contains methods related to jwt
+
+
+public static final long JWT_TOKEN_VALIDITY=5*60*60;
+	
+
+	public String getUserNameFromToken(String token) {
+		return getClaimFromToken(token,Claims::getSubject);
+	}
+	
+	public Date getExpirationDateFromToken(String token) {
+		return getClaimFromToken(token,Claims::getExpiration);
+	}
+	
+	public <T> T getClaimFromToken(String token,Function<Claims, T> claimsResolver) {
+		final Claims claims=getAllClaimsFromToken(token);
+		return claimsResolver.apply(claims);
+	}
+	
+	private Key GetSigninKey() {
+		byte[] key=Decoders.BASE64.decode("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+		
+		return Keys.hmacShaKeyFor(key);
+		
+	}
+	
+	private Claims getAllClaimsFromToken(String token) {
+		
+		return Jwts.parserBuilder().setSigningKey(GetSigninKey()).build().parseClaimsJws(token).getBody();
+	}
+	
+	private Boolean isTokenExpired(String token) {
+		final Date expiration=getExpirationDateFromToken(token);
+		return expiration.before(new Date());
+	}
+	
+	public String generateToken(UserDetails userDetails) {
+		
+		Map<String,Object> claims=new HashMap<>();
+		
+		return generateToken(claims,userDetails.getUsername());
+		
+	}
+	
+	private String generateToken(Map<String,Object> claims,String subject) {
+		
+		return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
+				.setExpiration(new Date(System.currentTimeMillis()+JWT_TOKEN_VALIDITY*1000))
+				.signWith(GetSigninKey(),SignatureAlgorithm.HS512).compact();
+	}
+	
+	public Boolean validateToken(String token,UserDetails userDetails) {
+		final String username=getUserNameFromToken(token);
+		
+		return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+		
+	}
+
+}
+
+
+3. JwtAuthenicationFilter that extends OncePerRequestFilter
+
+
+@Component
+public class JwtAuthenticationFilter  extends OncePerRequestFilter{
+	
+
+
+    @Autowired
+    private JwtHelp jwtHelper;
+
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
+
+        String requestHeader = request.getHeader("Authorization");
+        
+      
+        String username = null;
+        String token = null;
+        if (requestHeader != null && requestHeader.startsWith("Bearer")) {
+            token = requestHeader.substring(7);
+            try {
+
+                username = this.jwtHelper.getUserNameFromToken(token);
+
+            } catch (IllegalArgumentException e) {
+                
+                e.printStackTrace();
+            } catch (ExpiredJwtException e) {
+                
+                e.printStackTrace();
+            } catch (MalformedJwtException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+
+            }
+
+
+        } 
+
+
+  
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+
+
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            Boolean validateToken = this.jwtHelper.validateToken(token, userDetails);
+            if (validateToken) {
+
+       
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+
+            } else {
+                throw new ServletException("Validation faild ");
+            }
+
+
+        }
+
+        filterChain.doFilter(request, response);
+
+
+    }
+
+}
+
+4.Configure the security 
+
+@Configuration
+public class SecurityConfig {
+
+	@Autowired
+	private JwtAuthenticationEntryPoint point;
+	@Autowired
+	private JwtAuthenticationFilter filter;
+	@Autowired
+	private UserDetailsService userDetailService;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+		http.csrf(csrf -> csrf.disable()).authorizeHttpRequests(auth -> auth.requestMatchers("/user/**").authenticated()
+				.requestMatchers("/auth/login").
+				permitAll().
+				requestMatchers("/auth/add").permitAll().
+				anyRequest().authenticated())
+		.exceptionHandling(ex -> ex.authenticationEntryPoint(point))
+		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		
+		http.addFilterAfter(filter, UsernamePasswordAuthenticationFilter.class);
+		return http.build();
+	}
+	
+	@Bean
+	public DaoAuthenticationProvider doDaoAuthenticationProvider() {
+		DaoAuthenticationProvider daoAuthenticationProvider=new DaoAuthenticationProvider();
+		daoAuthenticationProvider.setUserDetailsService(userDetailService);
+		daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+		return daoAuthenticationProvider;
+	}
+
+}
+
+
+5.JwtResponse and JwtRequest class
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class JwtRequest {
+
+	private String email;
+	private String password;
+	
+}
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class JwtResponse {
+
+	private String jwtToken;
+	private String username;
+}
+
+6. AuthController
+
+
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
+
+	@Autowired
+	private UserDetailsService userDetailsService;
+	@Autowired
+	private UserService userService;
+	@Autowired
+	private AuthenticationManager manager;
+	
+	@Autowired
+	private JwtHelp helper;
+
+	@PostMapping("/login")
+	public ResponseEntity<JwtResponse> login(@RequestBody JwtRequest request){
+		this.doAuthenticate(request.getEmail(),request.getPassword());
+		UserDetails userDetails=userDetailsService.loadUserByUsername(request.getEmail());
+		String token=this.helper.generateToken(userDetails);
+		JwtResponse response=JwtResponse.builder().jwtToken(token).username(userDetails.getUsername()).build();
+		
+		return new ResponseEntity<JwtResponse>(response,HttpStatus.OK);
+	}
+	@PostMapping("/add")
+	public ResponseEntity<String> addUser(@RequestBody User user){
+		
+		String message=userService.addUser(user);
+		
+		return new ResponseEntity<String>(message, HttpStatus.CREATED);
+	}
+	
+	
+	private void doAuthenticate(String username,String password) {
+		UsernamePasswordAuthenticationToken authentication=new UsernamePasswordAuthenticationToken(username, password);
+		
+		try {
+			manager.authenticate(authentication);
+		} catch (BadCredentialsException e) {
+			throw new BadCredentialsException("Invalid Username or password");
+		}
+		
+	}
+	
+	@ExceptionHandler(BadCredentialsException.class)
+    public String exceptionHandler() {
+        return "Credentials Invalid !!";
+    }
+}
