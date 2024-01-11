@@ -1,0 +1,49 @@
+# Java exercises focused on strings for practice
+
+## Reverse a String:
+Write a program that takes a string as input and prints its reverse.
+
+## Palindrome Check:
+Implement a program to check whether a given string is a palindrome or not.
+
+## Count Vowels and Consonants:
+Create a program that counts the number of vowels and consonants in a given string.
+
+## String Concatenation:
+Write a program that concatenates two strings without using the + operator.
+
+## Remove Spaces:
+Implement a program that removes all the spaces from a given string.
+
+## Count Occurrences:
+Write a program that counts the occurrences of a specific character in a string.
+
+## Capitalize Words:
+Create a program that capitalizes the first letter of each word in a sentence.
+
+## Substring Check:
+Implement a program that checks if a given substring is present in a given string.
+
+## String Compression:
+Write a program to perform basic string compression. For example, the string "aaabbbcc" should become "a3b3c2".
+
+## Anagram Check:
+Create a program that checks if two strings are anagrams of each other.
+
+## String Rotation:
+Write a program to check if one string is a rotation of another. For example, "abcd" and "cdab".
+
+## Replace Characters:
+Implement a program that replaces all occurrences of a specific character in a string with another character.
+
+## Longest Common Prefix:
+Write a program that finds the longest common prefix among an array of strings.
+
+## String Palindrome Pairs:
+Create a program that finds all pairs of words in a list that together form a palindrome.
+
+## String Tokenizer:
+Write a program that uses StringTokenizer to break a sentence into words and prints them.
+
+
+" Feel free to use these exercises to enhance your understanding of string manipulation in Java. If you have any questions or need solutions, feel free to ask! "
